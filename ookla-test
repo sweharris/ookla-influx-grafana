@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# This script simply runs the Ookla "speedtest" command against a specific
+# server, and then sends the results to an influxDB
+
+# This value can be found from "speedtest -L" and pick one you like.
+# I prefer always picking the same server for consistency
+OOKLA_SERVER=982
+
+# Where is InfluxDB running?
+INFLUX_SERVER=monitor
+
+# What database to store it in.  I picked the one I use for collectd stats
+# so I didn't have to bother with more complicated setup work.
+INFLUX_DB=collectd
+
+data="$(speedtest -s $OOKLA_SERVER -f csv)"
+
+d=$(date +%s)
+h=$(hostname)
+
+## echo "$d,$data" >> /tmp/ookla-test
+
+# Strip off server name 'cos it can have commas in it
+x=${data#\"*\",}
+x=$(echo "$x" | tr -d '"')
+
+ping=$(echo "$x" | cut -d, -f2)
+jitter=$(echo "$x" | cut -d, -f3)
+down=$(echo "$x" | cut -d, -f5)
+up=$(echo "$x" | cut -d, -f6)
+
+curl -s -S -XPOST "$INFLUX_SERVER:8086/api/v2/write?bucket=$INFLUX_DB&precision=s" --data "speedtest,host=$h ping=$ping,jitter=$jitter,down=$down,up=$up $(date -u +%s)"
