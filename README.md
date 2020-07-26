@@ -87,4 +87,4 @@ The `grafana.json` file describes the dashboard I created.  It has two panels;
 the left shows bandwidth and draws the up/down lines.  The right panel shows
 ping times and jitter.
 
-![grafana.png]
+![dashboard](grafana.png)
